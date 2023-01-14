@@ -41,6 +41,7 @@ class ProductQuery:
 			"website_warehouse",
 			"ranking",
 			"on_backorder",
+			"brand"
 		]
 
 	def query(self, attributes=None, fields=None, search_term=None, start=0, item_group=None):

@@ -116,6 +116,7 @@
 				{% if cart_settings.show_contact_us_button %}
 					{% include "templates/generators/item/item_inquiry.html" %}
 				{% endif %}
+				<button id="share-item">Share</button>
 			</div>
 		</div>
 	</div>
@@ -123,6 +124,11 @@
 
 <script>
 	frappe.ready(() => {
+		$('#share-item').on('click', (e) => {
+			if(navigator.share) {
+            navigator.share({"title": "Item", "text": "Text", "url": "url"})
+        }
+		})
 		$('.page_content').on('click', '.btn-add-to-cart', (e) => {
 			// Bind action on add to cart button
 			const $btn = $(e.currentTarget);

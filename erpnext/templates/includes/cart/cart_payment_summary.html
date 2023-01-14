@@ -57,9 +57,20 @@
 				{{ _('Place Order') }}
 			</button>
 		{% else %}
-			<button class="btn btn-primary btn-request-for-quotation font-md w-100" type="button">
-				{{ _('Request for Quote') }}
-			</button>
+			<!--btn-request-for-quotation-->
+			{% if frappe.session.user == "Guest" %}
+				<a href="/register?new=1" style="color: white;">
+					<button class="btn btn-primary font-md w-100" type="button">
+						{{ _('Request for Quote') }} </a>
+					</button>
+				</a>
+			{% else %}
+
+					<button class="btn btn-primary font-md w-100 btn-request-quote" type="button" data-action="request_logged_user_quote" data-name="{{doc.name}}">
+						{{ _('Request for Quote') }} </a>
+					</button>
+
+			{% endif %}
 		{% endif %}
 	</div>
 </div>

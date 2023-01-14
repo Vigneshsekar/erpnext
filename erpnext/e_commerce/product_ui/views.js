@@ -43,11 +43,12 @@ erpnext.ProductView =  class {
 		let args = this.get_query_filters();
 
 		this.disable_view_toggler(true);
-
+		var guest_cart_cookie = frappe.get_cookie("guest_cart");
 		frappe.call({
 			method: "erpnext.e_commerce.api.get_product_filter_data",
 			args: {
-				query_args: args
+				query_args: args,
+				guest_cart_cookie: guest_cart_cookie
 			},
 			callback: function(result) {
 				if (!result || result.exc || !result.message || result.message.exc) {
@@ -66,8 +67,8 @@ erpnext.ProductView =  class {
 						me.re_render_discount_filters(result.message["filters"].discount_filters);
 
 						// Render views
-						me.render_list_view(result.message["items"], result.message["settings"]);
-						me.render_grid_view(result.message["items"], result.message["settings"]);
+						me.render_list_view(result.message["items"], result.message["settings"], result.message["item_group_count"], result.message["brand_count"]);
+						me.render_grid_view(result.message["items"], result.message["settings"], result.message["item_group_count"], result.message["brand_count"]);
 
 						me.products = result.message["items"];
 						me.product_count = result.message["items_count"];
@@ -96,7 +97,7 @@ erpnext.ProductView =  class {
 		$('#image-view').prop('disabled', disable);
 	}
 
-	render_grid_view(items, settings) {
+	render_grid_view(items, settings, item_group_count = {}, brand_count = {}) {
 		// loop over data and add grid html to it
 		let me = this;
 		this.prepare_product_area_wrapper("grid");
@@ -105,11 +106,13 @@ erpnext.ProductView =  class {
 			items: items,
 			products_section: $("#products-grid-area"),
 			settings: settings,
-			preference: me.preference
+			preference: me.preference,
+			item_group_count: item_group_count,
+			brand_count: brand_count
 		});
 	}
 
-	render_list_view(items, settings) {
+	render_list_view(items, settings, item_group_count = {}, brand_count = {}) {
 		let me = this;
 		this.prepare_product_area_wrapper("list");
 
@@ -117,7 +120,9 @@ erpnext.ProductView =  class {
 			items: items,
 			products_section: $("#products-list-area"),
 			settings: settings,
-			preference: me.preference
+			preference: me.preference,
+			item_group_count: item_group_count,
+			brand_count: brand_count
 		});
 	}
 
