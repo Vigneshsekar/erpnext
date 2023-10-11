@@ -154,13 +154,19 @@ erpnext.ProductGrid = class {
 			if (item.on_backorder) {
 				return `
 					<span class="out-of-stock mb-2 mt-1" style="color: var(--primary-color)">
-						${ __("Available on backorder") }
+						${ __("Available on Order") }
 					</span>
 				`;
 			} else if (!item.in_stock) {
 				return `
 					<span class="out-of-stock mb-2 mt-1">
-						${ __("Out of stock") }
+						${ __("Available Soon") }
+					</span>
+				`;
+			} else if (item.in_stock) {
+				return `
+					<span class="out-of-stock mb-2 mt-1">
+						${ __("Available") }
 					</span>
 				`;
 			}

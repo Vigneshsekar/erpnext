@@ -139,13 +139,18 @@ erpnext.ProductList = class {
 				return `
 					<br>
 					<span class="out-of-stock mt-2" style="color: var(--primary-color)">
-						${ __("Available on backorder") }
+						${ __("Available on Order") }
 					</span>
 				`;
 			} else if (!item.in_stock) {
 				return `
 					<br>
-					<span class="out-of-stock mt-2">${ __("Out of stock") }</span>
+					<span class="out-of-stock mt-2">${ __("Available Soon") }</span>
+				`;
+			} else if (item.in_stock) {
+				return `
+					<br>
+					<span class="out-of-stock mt-2">${ __("Available") }</span>
 				`;
 			}
 		}

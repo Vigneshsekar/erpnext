@@ -48,7 +48,7 @@ erpnext.ProductView =  class {
 			method: "erpnext.e_commerce.api.get_product_filter_data",
 			args: {
 				query_args: args,
-				guest_cart_cookie: guest_cart_cookie
+				guest_cart_cookie: guest_cart_cookie,
 			},
 			callback: function(result) {
 				if (!result || result.exc || !result.message || result.message.exc) {
@@ -67,8 +67,8 @@ erpnext.ProductView =  class {
 						me.re_render_discount_filters(result.message["filters"].discount_filters);
 
 						// Render views
-						me.render_list_view(result.message["items"], result.message["settings"], result.message["item_group_count"], result.message["brand_count"]);
-						me.render_grid_view(result.message["items"], result.message["settings"], result.message["item_group_count"], result.message["brand_count"]);
+						me.render_list_view(result.message["items"], result.message["settings"]);
+						me.render_grid_view(result.message["items"], result.message["settings"]);
 
 						me.products = result.message["items"];
 						me.product_count = result.message["items_count"];
@@ -84,7 +84,7 @@ erpnext.ProductView =  class {
 					}
 
 					// Bottom paging
-					me.add_paging_section(result.message["settings"]);
+					me.add_paging_section(result.message["settings"],result.message["items_count"]);
 				}
 
 				me.disable_view_toggler(false);
@@ -97,7 +97,7 @@ erpnext.ProductView =  class {
 		$('#image-view').prop('disabled', disable);
 	}
 
-	render_grid_view(items, settings, item_group_count = {}, brand_count = {}) {
+	render_grid_view(items, settings) {
 		// loop over data and add grid html to it
 		let me = this;
 		this.prepare_product_area_wrapper("grid");
@@ -106,13 +106,11 @@ erpnext.ProductView =  class {
 			items: items,
 			products_section: $("#products-grid-area"),
 			settings: settings,
-			preference: me.preference,
-			item_group_count: item_group_count,
-			brand_count: brand_count
+			preference: me.preference
 		});
 	}
 
-	render_list_view(items, settings, item_group_count = {}, brand_count = {}) {
+	render_list_view(items, settings) {
 		let me = this;
 		this.prepare_product_area_wrapper("list");
 
@@ -120,9 +118,7 @@ erpnext.ProductView =  class {
 			items: items,
 			products_section: $("#products-list-area"),
 			settings: settings,
-			preference: me.preference,
-			item_group_count: item_group_count,
-			brand_count: brand_count
+			preference: me.preference
 		});
 	}
 
@@ -151,7 +147,7 @@ erpnext.ProductView =  class {
 		};
 	}
 
-	add_paging_section(settings) {
+	add_paging_section(settings,items_count) {
 		$(".product-paging-area").remove();
 
 		if (this.products) {
@@ -167,12 +163,12 @@ erpnext.ProductView =  class {
 
 			let prev_disable = start > 0 ? "" : "disabled";
 			let next_disable = (this.product_count > page_length) ? "" : "disabled";
-
+			
 			paging_html += `
-				<button class="btn btn-default btn-prev" data-start="${ start - page_length }"
-					style="float: left" ${prev_disable}>
-					${ __("Prev") }
-				</button>`;
+			<button class="btn btn-default btn-prev" data-start="${ start - page_length }"
+				style="float: left" ${prev_disable}>
+				${ __("Prev")}
+			</button>`;
 
 			paging_html += `
 				<button class="btn btn-default btn-next" data-start="${ start + page_length }"
@@ -180,8 +176,14 @@ erpnext.ProductView =  class {
 					${ __("Next") }
 				</button>
 			`;
+			
+			paging_html += `
+				<div style = "text-align: center;">
+					${ (start / page_length) + 1 + " of " + Math.round((items_count + (start)) / page_length)}
+				`;
+			
 
-			paging_html += `</div></div>`;
+			paging_html += `</div></div></div>`;
 
 			$(".page_content").append(paging_html);
 			this.bind_paging_action();

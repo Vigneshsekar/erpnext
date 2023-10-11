@@ -75,6 +75,7 @@
   "notes_tab",
   "notes_html",
   "notes",
+  "website_comments",
   "dashboard_tab"
  ],
  "fields": [
@@ -508,13 +509,18 @@
    "fieldtype": "Tab Break",
    "label": "Connections",
    "show_dashboard": 1
+  },
+  {
+   "fieldname": "website_comments",
+   "fieldtype": "Small Text",
+   "label": "Website Comments"
   }
  ],
  "icon": "fa fa-user",
  "idx": 5,
  "image_field": "image",
  "links": [],
- "modified": "2022-10-13 12:42:04.277879",
+ "modified": "2023-06-20 06:46:41.571134",
  "modified_by": "Administrator",
  "module": "CRM",
  "name": "Lead",

@@ -19,4 +19,28 @@
 			</a>
 		</li>
 	{% endif %}
+	<script>
+		frappe.ready(() => {
+		let is_item_group_page = $(".item-group-content").data("item-group");
+		let is_products_page = window.location.pathname === "/all-products"
+		if( !is_products_page && !is_item_group_page) {
+			let navbar = $("#navbarTogglerDemo03").find(".ml-auto");
+			navbar.prepend(`
+				<li class="nav-item search-item mr-2">
+					<div class="input-group col-12 p-0 mr-4" style="width: 300px;">
+						<div class="dropdown w-100" id="dropdownMenuSearch">
+							<input type="search" name="query" id="nav-search-box" class="form-control font-md" placeholder="Explore Products"
+								aria-label="Product" aria-describedby="button-addon2">
+								<!-- Results dropdown rendered in product_search.js -->
+						</div>
+					</div>
+				</li>
+			`);
+			new erpnext.ProductSearch({	
+			search_box_id: "#nav-search-box"
+			});
+
+			}
+		});
+	</script>
 {% endblock %}

@@ -305,7 +305,13 @@
 
 		{% if values %}
 		<div class="filter-options">
+			
 			{% for value in values %}
+			{% if field_filter[0].label == "Item Group" %}
+				{%- set qty = frappe.db.get_all( "Item" ,{"disabled":0,"item_group":value}) -%}
+			{% elif field_filter[0].label == "Brand" %}
+				{%- set qty = frappe.db.get_all( "Item" ,{"disabled":0,"brand":value}) -%}
+			{% endif %}
 			<div class="filter-lookup-wrapper checkbox" data-value="{{ value }}">
 				<label for="{{value}}">
 					<input type="checkbox"
@@ -314,10 +320,11 @@
 						data-filter-name="{{ item_field.fieldname }}"
 						data-filter-value="{{ value }}"
 						style="width: 14px !important">
-					<span class="label-area">{{ value }}</span>
+					<span class="label-area">{{ value + " - " +  (qty|length | string())}}</span>
 				</label>
 			</div>
 			{% endfor %}
+			
 		</div>
 		{% else %}
 		<i class="text-muted">{{ _('No values') }}</i>
