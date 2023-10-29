@@ -126,7 +126,7 @@
   },
   {
    "fieldname": "thumbnail",
-   "fieldtype": "Data",
+   "fieldtype": "Text",
    "label": "Thumbnail",
    "read_only": 1
   },

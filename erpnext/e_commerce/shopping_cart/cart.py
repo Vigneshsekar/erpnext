@@ -32,10 +32,14 @@ def set_cart_count(quotation=None):
 
 @frappe.whitelist()
 def get_cart_quotation(doc=None):
-	party = get_party()
+	if frappe.session.user == "Guest":
+		party = get_party('unapprovedlead@alfarsi.me')
+	else:
+		party = get_party()
+	quote_identifier = frappe.request.cookies.get('guest_cart')
 
 	if not doc:
-		quotation = _get_cart_quotation(party)
+		quotation = _get_cart_quotation(party, quote_identifier)
 		doc = quotation
 		set_cart_count(quotation)
 
@@ -136,9 +140,14 @@ def request_for_quotation():
 	return quotation.name
 
 
-@frappe.whitelist()
-def update_cart(item_code, qty, additional_notes=None, with_items=False):
-	quotation = _get_cart_quotation()
+@frappe.whitelist(allow_guest=True)
+def update_cart(item_code, qty, additional_notes=None, with_items=False, quote_identifier=None):
+	if frappe.session.user == 'Guest':
+		frappe.session.user = 'unapprovedlead@alfarsi.me'
+	if quote_identifier:
+		if hasattr(frappe.local, "cookie_manager"):
+			frappe.local.cookie_manager.set_cookie("guest_cart", quote_identifier)
+	quotation = _get_cart_quotation(quote_identifier = quote_identifier)
 
 	empty_card = False
 	qty = flt(qty)
@@ -185,6 +194,8 @@ def update_cart(item_code, qty, additional_notes=None, with_items=False):
 
 	if cint(with_items):
 		context = get_cart_quotation(quotation)
+		if frappe.session.user == 'unapprovedlead@alfarsi.me':
+			frappe.session.user = 'Guest'
 		return {
 			"items": frappe.render_template("templates/includes/cart/cart_items.html", context),
 			"total": frappe.render_template("templates/includes/cart/cart_items_total.html", context),
@@ -193,6 +204,10 @@ def update_cart(item_code, qty, additional_notes=None, with_items=False):
 			),
 		}
 	else:
+		if frappe.session.user == 'unapprovedlead@alfarsi.me':
+			frappe.session.user = 'Guest'
+		frappe.cache().set_value('quote', quotation.name)
+		print(frappe.cache().get_value('quote'))
 		return {"name": quotation.name}
 
 
@@ -336,9 +351,11 @@ def decorate_quotation_doc(doc):
 	return doc
 
 
-def _get_cart_quotation(party=None):
+def _get_cart_quotation(party=None, quote_identifier=None):
 	"""Return the open Quotation of type "Shopping Cart" or make a new one"""
-	if not party:
+	if not party and frappe.session.user == 'Guest':
+		party = get_party('unapprovedlead@alfarsi.me')
+	else:
 		party = get_party()
 
 	quotation = frappe.get_all(
@@ -346,9 +363,12 @@ def _get_cart_quotation(party=None):
 		fields=["name"],
 		filters={
 			"party_name": party.name,
-			"contact_email": frappe.session.user,
+			# "contact_email": frappe.session.user,
 			"order_type": "Shopping Cart",
 			"docstatus": 0,
+			"is_lead_registered": 0,
+			"from_ecommerce": 1,
+			"session_uuid": quote_identifier
 		},
 		order_by="modified desc",
 		limit_page_length=1,
@@ -369,6 +389,8 @@ def _get_cart_quotation(party=None):
 				"docstatus": 0,
 				"__islocal": 1,
 				"party_name": party.name,
+				"from_ecommerce": 1,
+				"session_uuid": quote_identifier
 			}
 		)
 
@@ -379,8 +401,32 @@ def _get_cart_quotation(party=None):
 		qdoc.run_method("set_missing_values")
 		apply_cart_settings(party, qdoc)
 
-	return qdoc
+	if frappe.session.user == "Guest":
+		for item in qdoc.items:
+			item.rate = 0
+			item.amount = 0
+		qdoc.net_total = 0
+		qdoc.total = 0
+		qdoc.grand_total = 0
+	elif qdoc.quotation_to == "Customer":
+		qdoc.net_total = 0
+		qdoc.total = 0
+		qdoc.grand_total = 0
+		for item in qdoc.items:
 
+			rate = frappe.db.get_value("Item Price",{"price_list": qdoc.selling_price_list, "item_code": item.item_code, "customer": qdoc.party_name, "selling": 1}, "price_list_rate")
+			if not rate:
+				item.rate = 0
+				item.amount = 0
+			else:
+				item.rate = rate
+				item.amount = item.rate * item.qty
+				qdoc.net_total += qdoc.net_total
+				qdoc.total += qdoc.total
+				qdoc.grand_total += qdoc.grand_total
+
+
+	return qdoc
 
 def update_party(fullname, company_name=None, mobile_no=None, phone=None):
 	party = get_party()
@@ -495,6 +541,8 @@ def set_taxes(quotation, cart_settings):
 
 
 def get_party(user=None):
+	if frappe.session.user == 'Guest':
+		user = 'unapprovedlead@alfarsi.me'
 	if not user:
 		user = frappe.session.user
 
@@ -504,8 +552,15 @@ def get_party(user=None):
 	if contact_name:
 		contact = frappe.get_doc("Contact", contact_name)
 		if contact.links:
-			party_doctype = contact.links[0].link_doctype
-			party = contact.links[0].link_name
+			customer_found = False
+			for link in contact.links:
+				if link.link_doctype == "Customer":
+					party_doctype = link.link_doctype
+					party = link.link_name
+					customer_found = True
+			if not customer_found:
+				party_doctype = contact.links[0].link_doctype
+				party = contact.links[0].link_name
 
 	cart_settings = frappe.get_doc("E Commerce Settings")
 
@@ -513,7 +568,6 @@ def get_party(user=None):
 
 	if cart_settings.enable_checkout:
 		debtors_account = get_debtors_account(cart_settings)
-
 	if party:
 		return frappe.get_doc(party_doctype, party)
 

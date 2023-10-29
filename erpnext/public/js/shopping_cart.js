@@ -75,33 +75,45 @@ $.extend(shopping_cart, {
 	},
 
 	update_cart: function(opts) {
-		if (frappe.session.user==="Guest") {
-			if (localStorage) {
-				localStorage.setItem("last_visited", window.location.pathname);
-			}
-			frappe.call('erpnext.e_commerce.api.get_guest_redirect_on_action').then((res) => {
-				window.location.href = res.message || "/login";
-			});
-		} else {
-			shopping_cart.freeze();
-			return frappe.call({
-				type: "POST",
-				method: "erpnext.e_commerce.shopping_cart.cart.update_cart",
-				args: {
-					item_code: opts.item_code,
-					qty: opts.qty,
-					additional_notes: opts.additional_notes !== undefined ? opts.additional_notes : undefined,
-					with_items: opts.with_items || 0
-				},
-				btn: opts.btn,
-				callback: function(r) {
-					shopping_cart.unfreeze();
-					shopping_cart.set_cart_count(true);
-					if(opts.callback)
-						opts.callback(r);
-				}
-			});
+		// if (frappe.session.user==="Guest") {
+		// 	if (localStorage) {
+		// 		localStorage.setItem("last_visited", window.location.pathname);
+		// 	}
+		// 	frappe.call('erpnext.e_commerce.api.get_guest_redirect_on_action').then((res) => {
+		// 		window.location.href = res.message || "/login";
+		// 	});
+		// } else {
+		var guest_cart_cookie = frappe.get_cookie("guest_cart");
+		if (!guest_cart_cookie) {
+			var d = new Date();
+			d.setTime(d.getDate() + 7);
+			var expires = "expires="+d.toUTCString();
+			// UUID is not included in JS. So generating a random number.
+			var random_number = Math.floor((Math.random() * 100) * Math.floor((Math.random() * 100) * Date.now()))
+			document.cookie = "guest_cart=" + random_number + ";" + expires + ";path=/";
+			guest_cart_cookie = random_number
 		}
+
+		shopping_cart.freeze();
+		return frappe.call({
+			type: "POST",
+			method: "erpnext.e_commerce.shopping_cart.cart.update_cart",
+			args: {
+				item_code: opts.item_code,
+				qty: opts.qty,
+				additional_notes: opts.additional_notes !== undefined ? opts.additional_notes : undefined,
+				with_items: opts.with_items || 0,
+				quote_identifier: guest_cart_cookie
+			},
+			btn: opts.btn,
+			callback: function(r) {
+				shopping_cart.unfreeze();
+				shopping_cart.set_cart_count(true);
+				if(opts.callback)
+					opts.callback(r);
+			}
+		});
+		// }
 	},
 
 	set_cart_count: function(animate=false) {
@@ -109,7 +121,8 @@ $.extend(shopping_cart, {
 
 		var cart_count = frappe.get_cookie("cart_count");
 		if(frappe.session.user==="Guest") {
-			cart_count = 0;
+			$(".cart-shipping-address").hide();
+			$(".cart-billing-shipping-equal").hide();
 		}
 
 		if(cart_count) {
@@ -162,7 +175,7 @@ $.extend(shopping_cart, {
 				if(!r.exc) {
 					$(".cart-items").html(r.message.items);
 					$(".cart-tax-items").html(r.message.total);
-					$(".payment-summary").html(r.message.taxes_and_totals);
+					// $(".payment-summary").html(r.message.taxes_and_totals);
 					shopping_cart.set_cart_count();
 
 					if (cart_dropdown != true) {
@@ -189,31 +202,52 @@ $.extend(shopping_cart, {
 
 	bind_add_to_cart_action() {
 		$('.page_content').on('click', '.btn-add-to-cart-list', (e) => {
+			console.log("in erp");
 			const $btn = $(e.currentTarget);
-			$btn.prop('disabled', true);
+			// $btn.prop('disabled', true);
 
-			if (frappe.session.user==="Guest") {
-				if (localStorage) {
-					localStorage.setItem("last_visited", window.location.pathname);
-				}
-				frappe.call('erpnext.e_commerce.api.get_guest_redirect_on_action').then((res) => {
-					window.location.href = res.message || "/login";
-				});
-				return;
-			}
+			// if (frappe.session.user==="Guest") {
+			// 	if (localStorage) {
+			// 		localStorage.setItem("last_visited", window.location.pathname);
+			// 	}
+			// 	frappe.call('erpnext.e_commerce.api.get_guest_redirect_on_action').then((res) => {
+			// 		window.location.href = res.message || "/login";
+			// 	});
+			// 	return;
+			// }
 
-			$btn.addClass('hidden');
+			// $btn.addClass('hidden');
 			$btn.closest('.cart-action-container').addClass('d-flex');
 			$btn.parent().find('.go-to-cart').removeClass('hidden');
 			$btn.parent().find('.go-to-cart-grid').removeClass('hidden');
 			$btn.parent().find('.cart-indicator').removeClass('hidden');
 
 			const item_code = $btn.data('item-code');
+			const qty = $btn.closest('.number-spinner').find('input').val().trim()
 			erpnext.e_commerce.shopping_cart.update_cart({
 				item_code,
-				qty: 1
+				qty: qty
 			});
 
+		});
+
+		$(".page_content").on('click', '.number-spinner span button.cart-btn', function () {
+			var btn = $(this),
+				input = btn.closest('.number-spinner').find('input'),
+				oldValue = input.val().trim(),
+				newVal = 0;
+
+			if (btn.attr('data-dir') == 'up') {
+				newVal = Number.parseInt(oldValue) + 1;
+			} else if (btn.attr('data-dir') == 'dwn')  {
+				if (Number.parseInt(oldValue) > 1) {
+					newVal = Number.parseInt(oldValue) - 1;
+				}
+				else {
+					newVal = Number.parseInt(oldValue);
+				}
+			}
+			input.val(newVal);
 		});
 	},
 

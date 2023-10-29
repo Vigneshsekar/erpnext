@@ -3,6 +3,56 @@
 {% set cart_settings = shopping_cart.cart_settings %}
 {% set product_info = shopping_cart.product_info %}
 
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+<style>
+	  .button1:hover {
+		background-color: #00b1ff;
+		color: white;
+	  }
+	.share-wrapper .social .facebook {
+		color: #3A589E;
+	  }
+	  .share-wrapper .social .twitter {
+		color: #5FA9DD;
+	  }
+	  .share-wrapper .social .instagram {
+		color: #0D77B7;
+	  }
+	  .share-wrapper .social .google {
+		color: #DF4B38;
+	  }
+	  .share-wrapper ul.social .pinterest {
+		color: #CD2129;
+	  }
+	  .share-wrapper ul.social .youtube {
+		color: #CF2227;
+	  }
+	  .share-wrapper .social .instagram {
+		color: #ac2bac;;
+	  }
+
+	  .sharecontainer{
+		visibility: hidden;
+		display: none;
+	}
+
+	
+	.test{
+		visibility: visible;
+	}
+	
+	.fa {
+		margin-left: 10%;
+		font-size: 30px;
+		width: 20px;
+		text-align: center;
+		text-decoration: none;
+		border-radius: 50%;
+	}
+</style>
+
 <div class="item-cart row mt-2" data-variant-item-code="{{ item_code }}">
 	<div class="col-md-12">
 		<!-- Price and Availability -->
@@ -39,15 +89,15 @@
 		<div class="mt-2">
 			{% if product_info.get("on_backorder") %}
 				<span class="no-stock out-of-stock" style="color: var(--primary-color);">
-					{{ _('Available on backorder') }}
+					{{ _('Available on Order') }}
 				</span>
 			{% elif product_info.in_stock == 0 %}
 				<span class="no-stock out-of-stock">
-					{{ _('Out of stock') }}
+					{{ _('Available Soon') }}
 				</span>
 			{% elif product_info.in_stock == 1 %}
 				<span class="in-green has-stock">
-					{{ _('In stock') }}
+					{{ _('Available') }}
 					{% if product_info.show_stock_qty and product_info.stock_qty %}
 						({{ product_info.stock_qty }})
 					{% endif %}
@@ -116,6 +166,33 @@
 				{% if cart_settings.show_contact_us_button %}
 					{% include "templates/generators/item/item_inquiry.html" %}
 				{% endif %}
+				<button class="btn font-md w-30-40 test button1"style="height:50px;display: flex; justify-content:center; align-items:center;" onclick="myFunction()">
+					{{ _('Share') }}
+						
+						<svg fill="#000000" style="margin-left:5%; margin-top:-2%; height:20px;" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 512 512" xml:space="preserve">
+						<g>
+						<g>
+								<path d="M512,241.7L273.643,3.343v156.152c-71.41,3.744-138.015,33.337-188.958,84.28C30.075,298.384,0,370.991,0,448.222v60.436
+										l29.069-52.985c45.354-82.671,132.173-134.027,226.573-134.027c5.986,0,12.004,0.212,18.001,0.632v157.779L512,241.7z
+										M255.642,290.666c-84.543,0-163.661,36.792-217.939,98.885c26.634-114.177,129.256-199.483,251.429-199.483h15.489V78.131
+										l163.568,163.568L304.621,405.267V294.531l-13.585-1.683C279.347,291.401,267.439,290.666,255.642,290.666z"/>
+						</g>
+						</g>
+						</svg>
+				</button>
+				<button class="btn font-md w-30-40 sharecontainer" style="height:50px;display: flex; justify-content:center; align-items:center;" > 
+					<div class="share-wrapper">
+						<div class="social">
+							<a id = "facebook" target="_blank" title="facebook" onclick="facebook()" ><i  class="fa fa-facebook-official facebook"></i></a>
+							<a id = "twitter" target="_blank" title="twitter" onclick="twitter()" ><i  class="fa fa-twitter twitter"></i></a>
+							<a id = "instagram" target="_blank" title="instagram" onclick="instagram()" ><i  class="fa fa-instagram instagram"></i></a>
+							<!-- <a  href="" target="_blank" title="google"><i style=" margin: 10px;" class="fa fa-google-plus google" onclick="oops()"></i></a> -->
+						</div> 
+					</div>
+				</button>			
+
+
+			
 			</div>
 		</div>
 	</div>
@@ -123,6 +200,12 @@
 
 <script>
 	frappe.ready(() => {
+		$('#share-item').on('click', (e) => {
+			if(navigator.share) {
+            navigator.share({"title": "Item", "text": "Text", "url": "url"})
+        }
+		})
+
 		$('.page_content').on('click', '.btn-add-to-cart', (e) => {
 			// Bind action on add to cart button
 			const $btn = $(e.currentTarget);
@@ -172,7 +255,33 @@
 			})
 
 		});
+	
 	});
+
+
+	function facebook() {
+		var x = document.getElementById("facebook");
+		x.href = "https://www.facebook.com/sharer.php?u=" + window.location.href
+	}
+	
+	function twitter() {
+		var x = document.getElementById("twitter");
+		x.href = "https://twitter.com/intent/tweet?url=" + window.location.href
+	}
+
+	function instagram() {
+		var x = document.getElementById("instagram");
+		x.href = "https://instagram.com"
+	}
+
+	function myFunction() {
+		$(".test").css("visibility","hidden")
+		$(".test").css("display","none")
+		$(".sharecontainer").css("visibility","visible")
+		$(".sharecontainer").css("display","inline-block")
+		
+	  }
+
 
 
 </script>

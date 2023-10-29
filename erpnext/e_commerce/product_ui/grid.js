@@ -32,6 +32,14 @@ erpnext.ProductGrid = class {
 
 		let $product_wrapper = this.products_section;
 		$product_wrapper.append(html);
+
+		for(var item_group in this.item_group_count) {
+			$("label[for=\"" + item_group + "\"]>span.label-area")[0].innerHTML = item_group + " (" + this.item_group_count[item_group] + ")"
+		}
+
+		for(var item_group in this.brand_count) {
+			$("label[for=\"" + item_group + "\"]>span.label-area")[0].innerHTML = item_group + " (" + this.brand_count[item_group] + ")"
+		}
 	}
 
 	get_image_html(item, title) {
@@ -146,13 +154,19 @@ erpnext.ProductGrid = class {
 			if (item.on_backorder) {
 				return `
 					<span class="out-of-stock mb-2 mt-1" style="color: var(--primary-color)">
-						${ __("Available on backorder") }
+						${ __("Available on Order") }
 					</span>
 				`;
 			} else if (!item.in_stock) {
 				return `
 					<span class="out-of-stock mb-2 mt-1">
-						${ __("Out of stock") }
+						${ __("Available Soon") }
+					</span>
+				`;
+			} else if (item.in_stock) {
+				return `
+					<span class="out-of-stock mb-2 mt-1">
+						${ __("Available") }
 					</span>
 				`;
 			}
@@ -162,37 +176,54 @@ erpnext.ProductGrid = class {
 	}
 
 	get_primary_button(item, settings) {
+		if (!item.qty) {
+			item.qty = 0;
+		}
+
+		var button_text = "Add to Cart"
+		if(item.qty > 0) {
+			button_text = "Update Cart"
+		}
+
 		if (item.has_variants) {
 			return `
 				<a href="/${ item.route || '#' }">
-					<div class="btn btn-sm btn-explore-variants w-100 mt-4">
+					<div class="btn btn-sm btn-explore-variants btn mb-0 mt-0">
 						${ __('Explore') }
 					</div>
 				</a>
 			`;
 		} else if (settings.enabled && (settings.allow_items_not_in_stock || item.in_stock)) {
 			return `
-				<div id="${ item.name }" class="btn
-					btn-sm btn-primary btn-add-to-cart-list
-					w-100 mt-2 ${ item.in_cart ? 'hidden' : '' }"
-					data-item-code="${ item.item_code }">
-					<span class="mr-2">
-						<svg class="icon icon-md">
-							<use href="#icon-assets"></use>
-						</svg>
-					</span>
-					${ settings.enable_checkout ? __('Add to Cart') :  __('Add to Quote') }
-				</div>
 
-				<a href="/cart">
-					<div id="${ item.name }" class="btn
-						btn-sm btn-primary btn-add-to-cart-list
-						w-100 mt-4 go-to-cart-grid
-						${ item.in_cart ? '' : 'hidden' }"
-						data-item-code="${ item.item_code }">
-						${ settings.enable_checkout ? __('Go to Cart') :  __('Go to Quote') }
-					</div>
-				</a>
+
+
+			<div>
+				<div class="input-group number-spinner mt-1 mb-4">
+					<span class="input-group-prepend d-sm-inline-block">
+						<button class="btn cart-btn" data-dir="dwn">
+							-
+						</button>
+					</span>
+
+					<input class="form-control text-center cart-qty" value=${ item.qty } data-item-code="${ item.item_code }"
+						style="max-width: 70px;">
+
+					<span class="input-group-append d-sm-inline-block">
+						<button class="btn cart-btn" data-dir="up">
+							+
+						</button>
+					</span>
+
+					<span id="${ item.name }" class=" btn btn-primary input-group-append d-sm-inline-block btn-add-to-cart-list go-to-cart" data-item-code="${ item.item_code }"
+					style="padding-top: 5px;
+					margin-top: 10px;
+					margin-left: 20px;">
+					${button_text}
+					</span>
+				</div>
+			</div>
+
 			`;
 		} else {
 			return ``;

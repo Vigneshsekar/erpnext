@@ -79,12 +79,17 @@
 		const $zoom_wrapper = $('.image-zoom-view');
 
 		$('.website-image').on('click', (e) => {
+			$(".navbar.navbar-light.navbar-expand-lg").css("display","none")
 			e.preventDefault();
 			const $img = $(e.target);
 			const src = $img.prop('src');
 			if (!src) return;
 			show_preview(src);
 		});
+
+		$('.close').on('click', (e) => {
+			$(".navbar.navbar-light.navbar-expand-lg").css("display","block")
+		})
 
 		$zoom_wrapper.on('click', 'button', hide_preview);
 

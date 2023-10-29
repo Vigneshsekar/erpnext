@@ -43,11 +43,12 @@ erpnext.ProductView =  class {
 		let args = this.get_query_filters();
 
 		this.disable_view_toggler(true);
-
+		var guest_cart_cookie = frappe.get_cookie("guest_cart");
 		frappe.call({
 			method: "erpnext.e_commerce.api.get_product_filter_data",
 			args: {
-				query_args: args
+				query_args: args,
+				guest_cart_cookie: guest_cart_cookie,
 			},
 			callback: function(result) {
 				if (!result || result.exc || !result.message || result.message.exc) {
@@ -83,7 +84,7 @@ erpnext.ProductView =  class {
 					}
 
 					// Bottom paging
-					me.add_paging_section(result.message["settings"]);
+					me.add_paging_section(result.message["settings"],result.message["items_count"]);
 				}
 
 				me.disable_view_toggler(false);
@@ -146,7 +147,7 @@ erpnext.ProductView =  class {
 		};
 	}
 
-	add_paging_section(settings) {
+	add_paging_section(settings,items_count) {
 		$(".product-paging-area").remove();
 
 		if (this.products) {
@@ -162,12 +163,12 @@ erpnext.ProductView =  class {
 
 			let prev_disable = start > 0 ? "" : "disabled";
 			let next_disable = (this.product_count > page_length) ? "" : "disabled";
-
+			
 			paging_html += `
-				<button class="btn btn-default btn-prev" data-start="${ start - page_length }"
-					style="float: left" ${prev_disable}>
-					${ __("Prev") }
-				</button>`;
+			<button class="btn btn-default btn-prev" data-start="${ start - page_length }"
+				style="float: left" ${prev_disable}>
+				${ __("Prev")}
+			</button>`;
 
 			paging_html += `
 				<button class="btn btn-default btn-next" data-start="${ start + page_length }"
@@ -175,8 +176,14 @@ erpnext.ProductView =  class {
 					${ __("Next") }
 				</button>
 			`;
+			
+			paging_html += `
+				<div style = "text-align: center;">
+					${ (start / page_length) + 1 + " of " + Math.round((items_count + (start)) / page_length)}
+				`;
+			
 
-			paging_html += `</div></div>`;
+			paging_html += `</div></div></div>`;
 
 			$(".page_content").append(paging_html);
 			this.bind_paging_action();

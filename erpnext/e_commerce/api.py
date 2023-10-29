@@ -13,7 +13,7 @@ from erpnext.setup.doctype.item_group.item_group import get_child_groups_for_web
 
 
 @frappe.whitelist(allow_guest=True)
-def get_product_filter_data(query_args=None):
+def get_product_filter_data(query_args=None, guest_cart_cookie=None):
 	"""
 	Returns filtered products and discount filters.
 	:param query_args (dict): contains filters to get products list
@@ -59,6 +59,20 @@ def get_product_filter_data(query_args=None):
 		frappe.log_error("Product query with filter failed")
 		return {"exc": "Something went wrong!"}
 
+	if guest_cart_cookie:
+		from erpnext.e_commerce.shopping_cart.cart import _get_cart_quotation
+		cart = _get_cart_quotation(quote_identifier=guest_cart_cookie)
+		if cart:
+			cart_item_qty = {}
+			for item in cart.items:
+				if item.item_code not in cart_item_qty:
+					cart_item_qty[item.item_code] = item.qty
+			items_with_qty = []
+			for item in result["items"]:
+				if item["item_code"] in cart_item_qty:
+					item["qty"] = cart_item_qty[item["item_code"]]
+				items_with_qty.append(item)
+			result["items"] = items_with_qty
 	# discount filter data
 	filters = {}
 	discounts = result["discounts"]
@@ -67,13 +81,32 @@ def get_product_filter_data(query_args=None):
 		filter_engine = ProductFiltersBuilder()
 		filters["discount_filters"] = filter_engine.get_discount_filters(discounts)
 
-	return {
+
+	brand_data = {}
+	item_group_data = {}
+	for item in result["items"]:
+		if "brand" in item:
+			if item["brand"] in brand_data:
+				brand_data[item["brand"]] = brand_data[item["brand"]] + 1
+			else:
+				brand_data[item["brand"]] = 1
+
+		if "item_group" in item:
+			if item["item_group"] in item_group_data:
+				item_group_data[item["item_group"]] = item_group_data[item["item_group"]] + 1
+			else:
+				item_group_data[item["item_group"]] = 1
+
+	data_return =  {
 		"items": result["items"] or [],
 		"filters": filters,
 		"settings": engine.settings,
 		"sub_categories": sub_categories,
 		"items_count": result["items_count"],
+		"brand_count": brand_data,
+		"item_group_count": item_group_data
 	}
+	return data_return
 
 
 @frappe.whitelist(allow_guest=True)

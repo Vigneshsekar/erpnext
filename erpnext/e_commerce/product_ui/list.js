@@ -19,7 +19,6 @@ erpnext.ProductList = class {
 	make() {
 		let me = this;
 		let html = `<br><br>`;
-
 		this.items.forEach(item => {
 			let title = item.web_item_name || item.item_name || item.item_code || "";
 			title =  title.length > 200 ? title.substr(0, 200) + "..." : title;
@@ -32,6 +31,15 @@ erpnext.ProductList = class {
 
 		let $product_wrapper = this.products_section;
 		$product_wrapper.append(html);
+
+		for(var item_group in this.item_group_count) {
+			$("label[for=\"" + item_group + "\"]>span.label-area")[0].innerHTML = item_group + " (" + this.item_group_count[item_group] + ")"
+		}
+
+		for(var item_group in this.brand_count) {
+			$("label[for=\"" + item_group + "\"]>span.label-area")[0].innerHTML = item_group + " (" + this.brand_count[item_group] + ")"
+		}
+
 	}
 
 	get_image_html(item, title, settings) {
@@ -131,13 +139,18 @@ erpnext.ProductList = class {
 				return `
 					<br>
 					<span class="out-of-stock mt-2" style="color: var(--primary-color)">
-						${ __("Available on backorder") }
+						${ __("Available on Order") }
 					</span>
 				`;
 			} else if (!item.in_stock) {
 				return `
 					<br>
-					<span class="out-of-stock mt-2">${ __("Out of stock") }</span>
+					<span class="out-of-stock mt-2">${ __("Available Soon") }</span>
+				`;
+			} else if (item.in_stock) {
+				return `
+					<br>
+					<span class="out-of-stock mt-2">${ __("Available") }</span>
 				`;
 			}
 		}
@@ -158,6 +171,15 @@ erpnext.ProductList = class {
 	}
 
 	get_primary_button(item, settings) {
+		if (!item.qty) {
+			item.qty = 0;
+		}
+
+		var button_text = "Add to Cart"
+		if(item.qty > 0) {
+			button_text = "Update Cart"
+		}
+
 		if (item.has_variants) {
 			return `
 				<a href="/${ item.route || '#' }">
@@ -168,34 +190,35 @@ erpnext.ProductList = class {
 			`;
 		} else if (settings.enabled && (settings.allow_items_not_in_stock || item.in_stock)) {
 			return `
-				<div id="${ item.name }" class="btn
-					btn-sm btn-primary btn-add-to-cart-list mb-0
-					${ item.in_cart ? 'hidden' : '' }"
-					data-item-code="${ item.item_code }"
-					style="margin-top: 0px !important; max-height: 30px; float: right;
-						padding: 0.25rem 1rem; min-width: 135px;">
-					<span class="mr-2">
-						<svg class="icon icon-md">
-							<use href="#icon-assets"></use>
-						</svg>
+
+
+
+			<div>
+				<div class="input-group number-spinner mt-1 mb-4">
+					<span class="input-group-prepend d-sm-inline-block">
+						<button class="btn cart-btn" data-dir="dwn">
+							-
+						</button>
 					</span>
-					${ settings.enable_checkout ? __('Add to Cart') :  __('Add to Quote') }
-				</div>
 
-				<div class="cart-indicator list-indicator ${item.in_cart ? '' : 'hidden'}">
-					1
-				</div>
+					<input class="form-control text-center cart-qty" value=${ item.qty } data-item-code="${ item.item_code }"
+						style="max-width: 70px;">
 
-				<a href="/cart">
-					<div id="${ item.name }" class="btn
-						btn-sm btn-primary btn-add-to-cart-list
-						ml-4 go-to-cart mb-0 mt-0
-						${ item.in_cart ? '' : 'hidden' }"
-						data-item-code="${ item.item_code }"
-						style="padding: 0.25rem 1rem; min-width: 135px;">
-						${ settings.enable_checkout ? __('Go to Cart') :  __('Go to Quote') }
-					</div>
-				</a>
+					<span class="input-group-append d-sm-inline-block">
+						<button class="btn cart-btn" data-dir="up">
+							+
+						</button>
+					</span>
+
+					<span id="${ item.name }" class=" btn btn-primary input-group-append d-sm-inline-block btn-add-to-cart-list go-to-cart" data-item-code="${ item.item_code }"
+					style="padding-top: 5px;
+					margin-top: 10px;
+					margin-left: 20px;">
+					${button_text}
+					</span>
+				</div>
+			</div>
+
 			`;
 		} else {
 			return ``;
@@ -203,3 +226,33 @@ erpnext.ProductList = class {
 	}
 
 };
+
+
+{/* <a href="/cart">
+	<div id="${ item.name }" class="btn
+		btn-sm btn-primary btn-add-to-cart-list
+		ml-4 go-to-cart mb-0 mt-0
+		${ item.in_cart ? '' : 'hidden' }"
+		data-item-code="${ item.item_code }"
+		style="padding: 0.25rem 1rem; min-width: 135px;">
+		<div class="d-flex">
+			<div class="input-group number-spinner mt-1 mb-4">
+				<span class="input-group-prepend d-sm-inline-block">
+					<button class="btn cart-btn" data-dir="dwn">
+						-
+					</button>
+				</span>
+
+				<input class="form-control text-center cart-qty" value="0" data-item-code="${ item.item_code }"
+					style="max-width: 70px;">
+
+				<span class="input-group-append d-sm-inline-block">
+					<button class="btn cart-btn" data-dir="up">
+						+
+					</button>
+				</span>
+				</div>
+		</div>
+	</td>
+	</div>
+</a> */}
